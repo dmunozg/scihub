@@ -250,15 +250,11 @@ def main():
     sh = SciHub()
 
     parser = argparse.ArgumentParser(description='SciHub - To remove all barriers in the way of science.')
-    parser.add_argument('-d', '--download', metavar='(DOI|PMID|URL)', help='tries to find and download the paper',
-                        type=str)
-    parser.add_argument('-f', '--file', metavar='path', help='pass file with list of identifiers and download each',
-                        type=str)
+    parser.add_argument('-d', '--download', metavar='(DOI|PMID|URL)', help='tries to find and download the paper', type=str)
+    parser.add_argument('-f', '--file', metavar='path', help='pass file with list of identifiers and download each', type=str)
     parser.add_argument('-s', '--search', metavar='query', help='search Google Scholars', type=str)
-    parser.add_argument('-sd', '--search_download', metavar='query',
-                        help='search Google Scholars and download if possible', type=str)
-    parser.add_argument('-l', '--limit', metavar='N', help='the number of search results to limit to', default=10,
-                        type=int)
+    parser.add_argument('-sd', '--search_download', metavar='query', help='search Google Scholars and download if possible', type=str)
+    parser.add_argument('-l', '--limit', metavar='N', help='the number of search results to limit to', default=10, type=int)
     parser.add_argument('-o', '--output', metavar='path', help='directory to store papers', default='', type=str)
     parser.add_argument('-v', '--verbose', help='increase output verbosity', action='store_true')
     parser.add_argument('-p', '--proxy', help='via proxy format like socks5://user:pass@host:port', action='store', type=str)
@@ -297,28 +293,23 @@ def main():
                     logger.debug('Successfully downloaded file with identifier %s', paper['url'])
     elif args.file:
         with open(args.file, 'r', encoding='utf-8') as f:
-            identifiers = f.read().splitlines()	            
-            lines = f.read().splitlines()
-            for identifier in identifiers:	            
-                for line in lines:
-                    result = sh.download(identifier, args.output)	                
-                    identifier, title = line.split(',')
-                if 'err' in result:	                
-                    # Remove any characters from the title that are not allowed in Windows filenames
-                    logger.debug('%s', result['err'])	                
-                    filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '', title)
-                else:	                
+            identifiers = f.read().splitlines()
+            for identifier in identifiers:
+                result = sh.download(identifier, args.output)
+                if 'err' in result:
+                    logger.debug('%s', result['err'])
+                else:
+                    logger.debug('Successfully downloaded file with identifier %s', identifier)
+                    # Remove any characters from the identifier that are not allowed in filenames
+                    filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '', identifier)
                     # If the filename is empty after stripping, use a sanitized version of the identifier as the filename
-                    logger.debug('Successfully downloaded file with identifier %s', identifier)	                
                     if not filename:
-                        # Remove any characters from the identifier that are not allowed in filenames
-                        filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', identifier)
-                # Add .PDF extension to the filename
-                filename += '.pdf'
-                # Pass the filename to the download method
-                print(f'Downloading {filename}...')
-                sh.download(identifier, args.output, path=filename)
-
+                        filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '', identifier)
+                    # Add .PDF extension to the filename
+                    filename += '.pdf'
+                    # Pass the filename to the download method
+                    print(f'Downloading {filename}...')
+                    sh.download(identifier, args.output, path=filename)
 
 if __name__ == '__main__':
     main()
