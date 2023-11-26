@@ -6,7 +6,7 @@ Sci-API Unofficial API
 
 @author zaytoun
 """
-
+import time
 import re
 import argparse
 import hashlib
@@ -53,6 +53,12 @@ class SciHub(object):
             if 'sci-hub.' in a['href']:
                 urls.append(a['href'])
         return urls
+
+    def _get_soup(self, html):
+        """
+        Return html soup.
+        """
+        return BeautifulSoup(html, 'html.parser')
 
     def set_proxy(self, proxy):
         '''
@@ -120,6 +126,8 @@ class SciHub(object):
             start += 10
 
     @retry(wait_random_min=100, wait_random_max=1000, stop_max_attempt_number=10)
+    
+    
     def download(self, identifier, destination='', path=None):
         """
         Downloads a paper from sci-hub given an indentifier (DOI, PMID, URL).
@@ -129,10 +137,11 @@ class SciHub(object):
         data = self.fetch(identifier)
 
         if not 'err' in data:
-            self._save(data['pdf'],
-                       os.path.join(destination, path if path else data['name']))
+            self._save(data['pdf'], os.path.join(destination, path))
 
         return data
+
+
 
     def fetch(self, identifier):
         """
@@ -154,9 +163,9 @@ class SciHub(object):
             if res.headers['Content-Type'] != 'application/pdf':
                 self._change_base_url()
                 logger.info('Failed to fetch pdf with identifier %s '
-                                           '(resolved url %s) due to captcha' % (identifier, url))
+                                            '(resolved url %s) due to captcha' % (identifier, url))
                 raise CaptchaNeedException('Failed to fetch pdf with identifier %s '
-                                           '(resolved url %s) due to captcha' % (identifier, url))
+                                            '(resolved url %s) due to captcha' % (identifier, url))
                 # return {
                 #     'err': 'Failed to fetch pdf with identifier %s (resolved url %s) due to captcha'
                 #            % (identifier, url)
@@ -164,8 +173,7 @@ class SciHub(object):
             else:
                 return {
                     'pdf': res.content,
-                    'url': url,
-                    'name': self._generate_name(res)
+                    'url': url
                 }
 
         except requests.exceptions.ConnectionError:
@@ -174,11 +182,12 @@ class SciHub(object):
 
         except requests.exceptions.RequestException as e:
             logger.info('Failed to fetch pdf with identifier %s (resolved url %s) due to request exception.'
-                       % (identifier, url))
+                    % (identifier, url))
             return {
                 'err': 'Failed to fetch pdf with identifier %s (resolved url %s) due to request exception.'
-                       % (identifier, url)
+                    % (identifier, url)
             }
+
 
     def _get_direct_url(self, identifier):
         """
@@ -232,16 +241,11 @@ class SciHub(object):
         """
         return BeautifulSoup(html, 'html.parser')
 
-    def _generate_name(self, res):
+    def _generate_name(self, res, title):
         """
-        Generate unique filename for paper. Returns a name by calcuating 
-        md5 hash of file contents, then appending the last 20 characters
-        of the url which typically provides a good paper identifier.
+        Generate unique filename for paper. Returns the title passed in.
         """
-        name = res.url.split('/')[-1]
-        name = re.sub('#view=(.+)', '', name)
-        pdf_hash = hashlib.md5(res.content).hexdigest()
-        return '%s-%s' % (pdf_hash, name[-20:])
+        return title
 
 class CaptchaNeedException(Exception):
     pass
@@ -267,7 +271,7 @@ def main():
         sh.set_proxy(args.proxy)
 
     if args.download:
-        result = sh.download(args.download, args.output)
+        result = sh.download(args.download, args.output, title=args.download)
         if 'err' in result:
             logger.debug('%s', result['err'])
         else:
@@ -293,23 +297,27 @@ def main():
                     logger.debug('Successfully downloaded file with identifier %s', paper['url'])
     elif args.file:
         with open(args.file, 'r', encoding='utf-8') as f:
-            identifiers = f.read().splitlines()
-            for identifier in identifiers:
-                result = sh.download(identifier, args.output)
+            lines = f.read().splitlines()
+            for line in lines:
+                identifier, title = line.split(',', 1)
+                filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '', title)
+                filename += '.pdf'
+                result = sh.download(identifier, args.output, path=filename)
                 if 'err' in result:
                     logger.debug('%s', result['err'])
                 else:
                     logger.debug('Successfully downloaded file with identifier %s', identifier)
                     # Remove any characters from the identifier that are not allowed in filenames
-                    filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '', identifier)
+                    filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '', title)
+                    print(f"                    filename da desgarça do inferno {filename}")
                     # If the filename is empty after stripping, use a sanitized version of the identifier as the filename
                     if not filename:
                         filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '', identifier)
+                        print(f"filename com problema{filename}")
                     # Add .PDF extension to the filename
                     filename += '.pdf'
                     # Pass the filename to the download method
                     print(f'Downloading {filename}...')
                     sh.download(identifier, args.output, path=filename)
-
 if __name__ == '__main__':
     main()
