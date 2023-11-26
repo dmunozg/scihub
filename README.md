@@ -3,7 +3,7 @@ Scihub Downloader (forked from [Scihub.py](https://github.com/zaytoun/scihub.py)
 =======
 ### About this fork
 I forked this so I could adapt the script to some of my needs.
-Particularly, now when I pass the argument `-f`/'--file', it looks for a file in this format:
+Particularly, now when I pass the argument `-f`or `--file`, it looks for a file in this format:
 ```
 https://doi.org/10.1016/0024-3841(49)90091-1, Title 1
 https://doi.org/10.1016/0024-3841(49)90090-X, Title 2
