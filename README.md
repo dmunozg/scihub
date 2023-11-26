@@ -1,5 +1,6 @@
 Scihub Downloader (forked from [Scihub.py](https://github.com/zaytoun/scihub.py))
 [![Python](https://img.shields.io/badge/Python-3%2B-blue.svg)](https://www.python.org)
+=======
 ### About this fork
 I forked this so I could adapt the script to some of my needs.
 Particularly, now when I pass the argument `-f`/'--file', it looks for a file in this format:
