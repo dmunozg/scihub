@@ -13,6 +13,7 @@ It then proceeds to download the files whose DOI are specified in the file (just
 
 In case you're interested, I also wrote a couple scripts and named them [Crossref Metadata Extractor](https://github.com/ezxpro/Crossref-Metadata-Extractor). This one is able to fetch the metadata of all issues of a given serial publication (e.g a journal) using its [ISSN code](https://en.wikipedia.org/wiki/ISSN) from the [https://www.crossref.org](Crossref) database, using the [CrossRef Unified Resource API](https://api.crossref.org/swagger-ui/index.html).
 It is then possible to convert the output to a text file like the one above, allowing one to download serial publications from Sci-Hub in bulk.
+
 =========
 scihub.py is an unofficial API for Sci-hub. scihub.py can search for papers on Google Scholars and download papers from Sci-hub. It can be imported independently or used from the command-line.
 
