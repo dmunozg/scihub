@@ -309,11 +309,9 @@ def main():
                     logger.debug('Successfully downloaded file with identifier %s', identifier)
                     # Remove any characters from the identifier that are not allowed in filenames
                     filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '', title)
-                    print(f"                    filename da desgarça do inferno {filename}")
                     # If the filename is empty after stripping, use a sanitized version of the identifier as the filename
                     if not filename:
                         filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '', identifier)
-                        print(f"filename com problema{filename}")
                     # Add .PDF extension to the filename
                     filename += '.pdf'
                     # Pass the filename to the download method
