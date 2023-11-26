@@ -297,15 +297,22 @@ def main():
                     logger.debug('Successfully downloaded file with identifier %s', paper['url'])
     elif args.file:
         with open(args.file, 'r', encoding='utf-8') as f:
-            identifiers = f.read().splitlines()	            lines = f.read().splitlines()
-            for identifier in identifiers:	            for line in lines:
-                result = sh.download(identifier, args.output)	                identifier, title = line.split(',')
-                if 'err' in result:	                # Remove any characters from the title that are not allowed in Windows filenames
-                    logger.debug('%s', result['err'])	                filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '', title)
-                else:	                # If the filename is empty after stripping, use a sanitized version of the identifier as the filename
-                    logger.debug('Successfully downloaded file with identifier %s', identifier)	                if not filename:
-                    # Remove any characters from the identifier that are not allowed in filenames
-                    filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', identifier)
+            identifiers = f.read().splitlines()	            
+            lines = f.read().splitlines()
+            for identifier in identifiers:	            
+                for line in lines:
+                    result = sh.download(identifier, args.output)	                
+                    identifier, title = line.split(',')
+                if 'err' in result:	                
+                    # Remove any characters from the title that are not allowed in Windows filenames
+                    logger.debug('%s', result['err'])	                
+                    filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '', title)
+                else:	                
+                    # If the filename is empty after stripping, use a sanitized version of the identifier as the filename
+                    logger.debug('Successfully downloaded file with identifier %s', identifier)	                
+                    if not filename:
+                        # Remove any characters from the identifier that are not allowed in filenames
+                        filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', identifier)
                 # Add .PDF extension to the filename
                 filename += '.pdf'
                 # Pass the filename to the download method
