@@ -10,23 +10,26 @@ Sci-API Unofficial API
 """
 
 import argparse
-import logging
 import os
 import re
-from typing import Union, Any
+import sys
+from pathlib import Path
+from typing import Any, Union
 
 import requests
 import urllib3
 from bs4 import BeautifulSoup
+from loguru import logger
 from retrying import retry
 
-# TODO: replace this with loguru
 # log config
-logging.basicConfig()
-logger = logging.getLogger("Sci-Hub")
-logger.setLevel(logging.DEBUG)
-
-#
+logger.remove()
+logger.add(
+    sys.stderr,
+    format="<green>{time}</green> <level>{message}</level>",
+    colorize=True,
+    level="DEBUG",
+)
 urllib3.disable_warnings()
 
 # constants
@@ -214,7 +217,7 @@ class SciHub(object):
         Finds the direct source url for a given identifier.
         """
         id_type = self._classify(identifier)
-
+        logger.debug("URL classified as {}", id_type)
         return (
             identifier
             if id_type == "url-direct"
@@ -246,6 +249,7 @@ class SciHub(object):
         pmid - PubMed ID
         doi - digital object identifier
         """
+        # TODO: rework this and classify with regex
         if identifier.startswith("http") or identifier.startswith("https"):
             if identifier.endswith("pdf"):
                 return "url-direct"
@@ -262,12 +266,6 @@ class SciHub(object):
         """
         with open(path, "wb") as f:
             f.write(data)
-
-    def _get_soup(self, html: str) -> BeautifulSoup:
-        """
-        Return html soup.
-        """
-        return BeautifulSoup(html, "html.parser")
 
     def _generate_name(self, res: Any, title: str) -> str:
         """
@@ -333,12 +331,6 @@ def main() -> None:
         type=str,
     )
     parser.add_argument(
-        "-v",
-        "--verbose",
-        help="increase output verbosity",
-        action="store_true",
-    )
-    parser.add_argument(
         "-p",
         "--proxy",
         help="via proxy format like socks5://user:pass@host:port",
@@ -348,8 +340,6 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if args.verbose:
-        logger.setLevel(logging.DEBUG)
     if args.proxy:
         sh.set_proxy(args.proxy)
 
