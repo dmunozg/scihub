@@ -1,0 +1,42 @@
+[tool.poetry]
+name = "scihub"
+version = "0.0.0"
+description = "Unofficial API for retrieving documents from SciHub"
+authors = ["Diego Muñoz G. <diego@asgamers.net>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+beautifulsoup4 = "^4.12.3"
+requests = "^2.31.0"
+retrying = "^1.3.4"
+pysocks = "^1.7.1"
+scholarly = "^1.7.11"
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.13.2"
+ruff = "^0.1.14"
+mypy = "^1.8.0"
+types-requests = "^2.31.0.20240125"
+types-beautifulsoup4 = "^4.12.0.20240106"
+ipython = "^8.20.0"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+[tool.ruff]
+line-length = 79
+preview = true
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.isort]
+combine-as-imports = true
+
+[tool.mypy]
+strict = true
