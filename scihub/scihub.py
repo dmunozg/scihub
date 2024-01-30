@@ -39,7 +39,19 @@ HEADERS: MutableMapping[str, str | bytes] = {
 
 
 def _extract_pdf_link(response: requests.Response) -> str:
+    """
+    Extracts the PDF link from a given HTTP response.
+
+    This function takes a requests.Response object as input and returns
+    the URL to the corresponding PDF document. The assumption is that
+    the PDF link can be found within a 'button' tag with a specific attribute
+    and the URL will be in the "onclick" HTML attribute of this button. This
+    is the case for Sci-Hub found references.
+
+    Usage:
+        pdf_url = extract_pdf_link(requests.Response())"""
     sopa = BeautifulSoup(response.content, "html.parser")
+    # TODO: This should verify if the response is facing a Captcha.
     pdf_link = sopa.find(
         "button", {"onclick": lambda x: "location.href" in x}
     )["onclick"].split("'")[1]
@@ -49,6 +61,21 @@ def _extract_pdf_link(response: requests.Response) -> str:
 def _download_pdf(
     pdf_link: str, output_dir: str | Path, pdf_filename: Optional[str] = None
 ) -> None:
+    """
+    Downloads a PDF file from a provided link and saves it in the specifie
+    directory. If no filename is provided, it will take the filename from the
+    original link.
+
+    Parameters
+    - pdf_link (str): The URL of the PDF to be downloaded.
+    - output_dir (str | Path): The directory where the file will be saved.
+    - pdf_filename (Optional[str], optional): A specific filename for the PDF.
+    Default is None.
+
+    Returns
+    - None: As this function does not directly return a value, it operates by
+    changing the state of the program. It downloads the specified PDF and
+    saves it to the specified directory."""
     if pdf_filename is None:
         target_path = Path(urllib.parse.urlparse(pdf_link).path)
         pdf_target_filename = Path(output_dir) / target_path.parts[-1]
@@ -57,8 +84,7 @@ def _download_pdf(
     response = requests.get(pdf_link)
     if response.status_code == 200:
         logger.info(
-            "PDF encontrado con éxito. Guardando en {}",
-            str(pdf_target_filename),
+            "PDF found successfully. Saving to {}", pdf_target_filename
         )
         with open(pdf_target_filename, "wb") as output_handler:
             output_handler.write(response.content)
@@ -66,13 +92,13 @@ def _download_pdf(
         logger.error(
             "Failed to download the PDF file. Status code: {}",
             response.status_code,
+            response.status_code,
         )
 
 
 class SciHub(object):
     """
-    SciHub class can search for papers on Google Scholars
-    and fetch/download papers from sci-hub.io
+    SciHub class can fetch/download papers from Sci-Hub
     """
 
     def __init__(self, base_url: Optional[str] = None) -> None:
@@ -86,7 +112,11 @@ class SciHub(object):
 
     def _get_available_scihub_urls(self) -> list[str]:
         """
-        Finds available scihub urls via https://sci-hub.now.sh/
+        Finds available Sci-Hub URLs via https://sci-hub.now.sh/.
+        This method retrieves a list of working Sci-Hub instance URLs by accessing the
+        provided link and parsing the resulting HTML page for relevant links.
+        Returns:
+            A list of available Sci-Hub URLs as strings.
         """
         urls = []
         res = requests.get("https://sci-hub.now.sh/")
@@ -111,13 +141,16 @@ class SciHub(object):
         self.sess.proxies.update(proxy)
 
     def _change_base_url(self) -> None:
+        """Update the current base URL by choosing a new one from the available
+        base URL list.
+        Raises:
+            Exception: If there are no valid base URLs left in the list.
+        """
         if not self.available_base_url_list:
             raise Exception("Ran out of valid sci-hub urls")
         del self.available_base_url_list[0]
         self.base_url = self.available_base_url_list[0] + "/"
-        logger.info(
-            "I'm changing to {}".format(self.available_base_url_list[0])
-        )
+        logger.info("Changing base_url to {}", self.base_url)
 
     # TODO: This should be replaced with with scholarly
     def search(
@@ -213,4 +246,5 @@ class SciHub(object):
 
 
 class CaptchaNeedException(Exception):
+    # TODO: implement this
     pass
