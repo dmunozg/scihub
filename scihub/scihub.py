@@ -62,9 +62,12 @@ def _extract_pdf_link(response: requests.Response) -> str:
         pdf_url = extract_pdf_link(requests.Response())"""
     sopa = BeautifulSoup(response.content, "html.parser")
     # TODO: This should verify if the response is facing a Captcha.
-    pdf_link = sopa.find(
+    download_pdf_button = sopa.find(
         "button", {"onclick": lambda x: "location.href" in x}
-    )["onclick"].split("'")[1]
+    )
+    if download_pdf_button is None:
+        raise CaptchaRequiredException("SciHub asked for CAPTCHA")
+    pdf_link = download_pdf_button["onclick"].split("'")[1]
     return pdf_link.replace("//", "http://")
 
 
@@ -118,6 +121,7 @@ class SciHub(object):
         self.sess.headers = HEADERS
         self.available_base_url_list = self._get_available_scihub_urls()
         self.max_tries = max_tries
+        self._response: Optional[requests.Response] = None
         if base_url is None:
             self.base_url = self.available_base_url_list[0] + "/"
         else:
@@ -161,7 +165,7 @@ class SciHub(object):
         """
         if not self.available_base_url_list:
             raise Exception("Ran out of valid sci-hub urls")
-        if _are_same_urls(self.base_url, self.available_base_url_list[0]):
+        if not _are_same_urls(self.base_url, self.available_base_url_list[0]):
             del self.available_base_url_list[0]
         self.base_url = self.available_base_url_list[0] + "/"
         logger.info("Changing base_url to {}", self.base_url)
@@ -241,7 +245,10 @@ class SciHub(object):
             pdf_filename (str, Optional): Name of the PDF file that will be saved.
               By default, will choose the name given by Sci-Hub.
         """
-        pdf_link = self.fetch(reference)
+        if self._response is None:
+            pdf_link = self.fetch(reference)
+        else:
+            pdf_link = _extract_pdf_link(self._response)
         _download_pdf(pdf_link, output_dir, pdf_filename)
 
     def fetch(self, reference: str) -> str:
@@ -259,20 +266,30 @@ class SciHub(object):
                 logger.info(
                     "{} failed after {} tries.", self.base_url, self.max_tries
                 )
+                self._change_base_url()
                 try_ = 1
-            response = requests.post(
+            self._response = requests.post(
                 url=self.base_url, data={"request": reference}
             )
-            if len(response.content) == 0:
+            if len(self._response.content) == 0:
                 logger.warning("{} gave an empty response. Retrying in 3s.")
                 sleep(3)
                 try_ += 1
                 continue
+            try:
+                pdf_link = _extract_pdf_link(self._response)
+            except CaptchaRequiredException:
+                logger.warning(
+                    "{} asked for CAPTCHA. Retrying with another mirror",
+                    self.base_url,
+                )
+                self._change_base_url()
+                continue
             break
-        return _extract_pdf_link(response)
+        return pdf_link
 
 
-class OutOfMirrors(Exception):
+class OutOfMirrorsException(Exception):
     """
     Invoked if SciHub object runs out of mirrors to try
     """
@@ -280,6 +297,6 @@ class OutOfMirrors(Exception):
     pass
 
 
-class CaptchaNeedException(Exception):
+class CaptchaRequiredException(Exception):
     # TODO: implement this
     pass
