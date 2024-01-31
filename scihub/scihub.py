@@ -11,6 +11,7 @@ Sci-API Unofficial API
 
 import sys
 from pathlib import Path
+from time import sleep
 from typing import Any, MutableMapping, Union, Optional
 
 import requests
@@ -36,6 +37,15 @@ SCHOLARS_BASE_URL: str = "https://scholar.google.com/scholar"
 HEADERS: MutableMapping[str, str | bytes] = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:27.0) Gecko/20100101 Firefox/27.0"
 }
+
+
+def _are_same_urls(url1: str, url2: str) -> bool:
+    """Checks whether two URLs refer to the same resource."""
+    parsed1 = urllib.parse.urlparse(url1)
+    parsed2 = urllib.parse.urlparse(url2)
+    url1_no_scheme = parsed1._replace(scheme="").geturl()
+    url2_no_scheme = parsed2._replace(scheme="").geturl()
+    return url1_no_scheme == url2_no_scheme
 
 
 def _extract_pdf_link(response: requests.Response) -> str:
@@ -101,10 +111,13 @@ class SciHub(object):
     SciHub class can fetch/download papers from Sci-Hub
     """
 
-    def __init__(self, base_url: Optional[str] = None) -> None:
+    def __init__(
+        self, base_url: Optional[str] = None, max_tries: int = 3
+    ) -> None:
         self.sess = requests.Session()
         self.sess.headers = HEADERS
         self.available_base_url_list = self._get_available_scihub_urls()
+        self.max_tries = max_tries
         if base_url is None:
             self.base_url = self.available_base_url_list[0] + "/"
         else:
@@ -148,7 +161,8 @@ class SciHub(object):
         """
         if not self.available_base_url_list:
             raise Exception("Ran out of valid sci-hub urls")
-        del self.available_base_url_list[0]
+        if _are_same_urls(self.base_url, self.available_base_url_list[0]):
+            del self.available_base_url_list[0]
         self.base_url = self.available_base_url_list[0] + "/"
         logger.info("Changing base_url to {}", self.base_url)
 
@@ -239,10 +253,31 @@ class SciHub(object):
         Returns:
             str: Link for direct download of the document. I will be empty if the article could not be found.
         """
-        response = requests.post(
-            url=self.base_url, data={"request": reference}
-        )
+        try_ = 1
+        while True:
+            if try_ >= self.max_tries:
+                logger.info(
+                    "{} failed after {} tries.", self.base_url, self.max_tries
+                )
+                try_ = 1
+            response = requests.post(
+                url=self.base_url, data={"request": reference}
+            )
+            if len(response.content) == 0:
+                logger.warning("{} gave an empty response. Retrying in 3s.")
+                sleep(3)
+                try_ += 1
+                continue
+            break
         return _extract_pdf_link(response)
+
+
+class OutOfMirrors(Exception):
+    """
+    Invoked if SciHub object runs out of mirrors to try
+    """
+
+    pass
 
 
 class CaptchaNeedException(Exception):
