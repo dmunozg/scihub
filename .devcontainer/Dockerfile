@@ -42,4 +42,5 @@ RUN echo "done 0" \
     && pyenv global ${PYTHON_VERSION} \
     && echo "done 3" \
     && curl -sSL https://install.python-poetry.org | python3 - \
-    && poetry config virtualenvs.in-project true
+    && poetry config virtualenvs.in-project true \
+    && poetry self add "poetry-dynamic-versioning[plugin]"
