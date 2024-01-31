@@ -44,3 +44,17 @@ RUN echo "done 0" \
     && curl -sSL https://install.python-poetry.org | python3 - \
     && poetry config virtualenvs.in-project true \
     && poetry self add "poetry-dynamic-versioning[plugin]"
+
+# Install firefox from a Deb file
+RUN echo 'Package: *' > /etc/apt/preferences.d/mozilla-firefox && \
+    echo 'Pin: release o=LP-PPA-mozillateam' >> /etc/apt/preferences.d/mozilla-firefox && \
+    echo 'Pin-Priority: 1001' >> /etc/apt/preferences.d/mozilla-firefox && \
+    echo 'Package: firefox' >> /etc/apt/preferences.d/mozilla-firefox && \
+    echo 'Pin: version 1:1snap1-0ubuntu2' >> /etc/apt/preferences.d/mozilla-firefox && \
+    echo 'Pin-Priority: -1' >> /etc/apt/preferences.d/mozilla-firefox
+
+RUN echo "Installing Firefox" \
+    && apt install -y software-properties-common \
+    && add-apt-repository ppa:mozillateam/ppa -y \
+    && apt update \
+    && apt install -y firefox
