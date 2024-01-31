@@ -11,7 +11,7 @@
 	// "forwardPorts": [],
 
 	// 👇 Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "",
+	// "postCreateCommand": "sudo apt -y install firefox",
 
 	// 👇 Configure tool-specific properties.
 	"customizations": {
