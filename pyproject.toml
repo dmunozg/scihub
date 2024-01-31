@@ -4,6 +4,8 @@ version = "0.0.0"
 description = "Unofficial API for retrieving documents from SciHub"
 authors = ["Diego Muñoz G. <diego@asgamers.net>"]
 readme = "README.md"
+license = "MIT"
+repository = "https://github.com/dmunozg/scihub"
 
 [tool.poetry.dependencies]
 python = "^3.11"

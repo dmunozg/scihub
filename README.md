@@ -4,13 +4,23 @@ Sci-Hub lib
 
 Forked from [Scihub Downloader](https://github.com/ezxpro/scihub-downloader) which is a fork of [scihub.py](https://github.com/zaytoun/scihub.py).
 
+Installation
+------------
+
+The library can be downloaded from
+[PyPI](https://pypi.org/project/scihub_dmunozg/) and installed with pip:
+
+```bash
+pip install scihub_dmunozg
+```
+
 Usage
 -----
 
 First, import the module and create an instance of the `SciHub` object. At this point, you can optionally specify which Sci-Hub mirror will be employed.
 
 ```python
-from scihub import SciHub
+from scihub_dmunozg import SciHub
 
 sh = SciHub(base_url="https://sci-hub.ru")
 ```
