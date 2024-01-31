@@ -23,7 +23,6 @@ jobs:
           poetry self add "poetry-dynamic-versioning[plugin]"
       - name: Build package
         run: |
-          cd your_project_directory
           poetry build
       - name: Release on GitHub
         run: |
