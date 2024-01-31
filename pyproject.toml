@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "scihub"
+name = "scihub_dmunozg"
 version = "0.0.0"
 description = "Unofficial API for retrieving documents from SciHub"
 authors = ["Diego Muñoz G. <diego@asgamers.net>"]

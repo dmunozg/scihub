@@ -61,11 +61,12 @@ def _extract_pdf_link(response: requests.Response) -> str:
     Usage:
         pdf_url = extract_pdf_link(requests.Response())"""
     sopa = BeautifulSoup(response.content, "html.parser")
-    # TODO: This should verify if the response is facing a Captcha.
     download_pdf_button = sopa.find(
         "button", {"onclick": lambda x: "location.href" in x}
     )
     if download_pdf_button is None:
+        # TODO: This could happen in other conditions. For example, if no
+        # button is found
         raise CaptchaRequiredException("SciHub asked for CAPTCHA")
     pdf_link = download_pdf_button["onclick"].split("'")[1]
     return pdf_link.replace("//", "http://")
@@ -164,7 +165,7 @@ class SciHub(object):
             Exception: If there are no valid base URLs left in the list.
         """
         if not self.available_base_url_list:
-            raise Exception("Ran out of valid sci-hub urls")
+            raise OutOfMirrorsException("Ran out of valid sci-hub urls")
         if not _are_same_urls(self.base_url, self.available_base_url_list[0]):
             del self.available_base_url_list[0]
         self.base_url = self.available_base_url_list[0] + "/"
@@ -279,7 +280,7 @@ class SciHub(object):
             try:
                 pdf_link = _extract_pdf_link(self._response)
             except CaptchaRequiredException:
-                logger.warning(
+                logger.info(
                     "{} asked for CAPTCHA. Retrying with another mirror",
                     self.base_url,
                 )
