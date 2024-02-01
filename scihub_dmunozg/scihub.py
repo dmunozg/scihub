@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
 
-"""
-Sci-API Unofficial API
-[Search|Download] research papers from [scholar.google.com|sci-hub.io].
-
-@author zaytoun
-@author ezxpro
-@author dmunozg
-"""
-
 import sys
 from pathlib import Path
 from time import sleep
@@ -46,6 +37,16 @@ def _are_same_urls(url1: str, url2: str) -> bool:
     url1_no_scheme = parsed1._replace(scheme="").geturl()
     url2_no_scheme = parsed2._replace(scheme="").geturl()
     return url1_no_scheme == url2_no_scheme
+
+
+def _was_article_found(response: requests.Response) -> bool:
+  """Check if an article was found or not, by checking the title of the response."""
+    sopa = BeautifulSoup(response.content, "html.parser")
+    title = sopa.find("title").string
+    if "article not found" in title:
+        return False
+    else:
+        return True
 
 
 def _extract_pdf_link(response: requests.Response) -> str:
@@ -272,6 +273,9 @@ class SciHub(object):
             self._response = requests.post(
                 url=self.base_url, data={"request": reference}
             )
+            if not _was_article_found(self._response):
+                logger.warning("{} could not be found in SciHub", reference)
+                raise ArticleNotFoundException
             if len(self._response.content) == 0:
                 logger.warning("{} gave an empty response. Retrying in 3s.")
                 sleep(3)
@@ -297,6 +301,11 @@ class OutOfMirrorsException(Exception):
 
     pass
 
+class ArticleNotFoundException(Exception):
+    """
+    Invoked if Sci-Hub does not have the requested document
+    """
+    pass
 
 class CaptchaRequiredException(Exception):
     # TODO: implement this
